@@ -98,10 +98,38 @@
 
 html {
   background: var(--bg);
+  /* Stop iOS enlarging text in landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Grid children may shrink below their content width, so long text
+   truncates or wraps instead of stretching the page on phones. */
+@layer base {
+  .grid > * {
+    min-width: 0;
+  }
+}
+
+/* Icons keep their size inside tight flex rows. */
+.lucide {
+  flex-shrink: 0;
+}
+
+/* iPhones zoom into any text field under 16px and don't zoom back out.
+   Keep form fields at 16px on phone-sized screens. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 body {
   background: var(--bg);
+  /* Last line of defence: nothing can make the page scroll sideways. */
+  overflow-x: clip;
   color: var(--ink);
   font-feature-settings: "tnum" 0;
   -webkit-tap-highlight-color: transparent;

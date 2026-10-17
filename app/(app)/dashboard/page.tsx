@@ -64,17 +64,17 @@ export default async function DashboardPage() {
   return (
     <div className="animate-fade-up space-y-6">
       {/* Header */}
-      <header className="flex items-start justify-between gap-4">
-        <div>
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm text-ink-3">{formatLongDate(today)}</p>
-          <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-ink sm:text-[28px]">
+          <h1 className="mt-0.5 text-[22px] leading-tight font-bold tracking-tight text-ink sm:text-[28px]">
             {greetingFor(timeZone)}
             {name ? `, ${name}` : ""}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-surface px-3.5 text-sm font-bold text-ink shadow-card"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-surface px-3 text-sm font-bold text-ink shadow-card sm:px-3.5"
             title="Consecutive days with every scheduled habit completed"
           >
             <Flame className="size-4 text-warning" aria-hidden />
