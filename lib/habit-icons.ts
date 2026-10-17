@@ -1,0 +1,60 @@
+import {
+  BookOpen,
+  Brain,
+  Briefcase,
+  Check,
+  Coffee,
+  Droplet,
+  Dumbbell,
+  GraduationCap,
+  Heart,
+  Leaf,
+  Lightbulb,
+  ListChecks,
+  Moon,
+  Music,
+  Paintbrush,
+  Pencil,
+  Phone,
+  Smile,
+  Sparkles,
+  Sun,
+  Trophy,
+  Utensils,
+  Volleyball,
+  Wind,
+  type LucideIcon,
+} from "lucide-react";
+
+export const HABIT_ICONS: Record<string, { icon: LucideIcon; label: string }> = {
+  check: { icon: Check, label: "Check" },
+  book: { icon: BookOpen, label: "Reading" },
+  brain: { icon: Brain, label: "Learning" },
+  study: { icon: GraduationCap, label: "Study" },
+  ball: { icon: Volleyball, label: "Football" },
+  dumbbell: { icon: Dumbbell, label: "Training" },
+  wind: { icon: Wind, label: "Breathing" },
+  tasks: { icon: ListChecks, label: "Tasks" },
+  work: { icon: Briefcase, label: "Work" },
+  idea: { icon: Lightbulb, label: "Ideas" },
+  write: { icon: Pencil, label: "Writing" },
+  art: { icon: Paintbrush, label: "Creative" },
+  music: { icon: Music, label: "Music" },
+  water: { icon: Droplet, label: "Hydration" },
+  food: { icon: Utensils, label: "Nutrition" },
+  coffee: { icon: Coffee, label: "Coffee" },
+  leaf: { icon: Leaf, label: "Nature" },
+  sun: { icon: Sun, label: "Morning" },
+  moon: { icon: Moon, label: "Evening" },
+  heart: { icon: Heart, label: "Health" },
+  smile: { icon: Smile, label: "Mood" },
+  phone: { icon: Phone, label: "Call" },
+  sparkles: { icon: Sparkles, label: "Self-care" },
+  trophy: { icon: Trophy, label: "Goal" },
+};
+
+export const HABIT_ICON_KEYS = Object.keys(HABIT_ICONS);
+
+export function habitIcon(key: string | null): LucideIcon {
+  return (key && HABIT_ICONS[key]?.icon) || Check;
+}
