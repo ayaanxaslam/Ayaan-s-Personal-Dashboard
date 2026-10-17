@@ -26,10 +26,11 @@ export default async function LoginPage() {
             <div className="space-y-3 text-sm text-ink-2">
               <p className="font-semibold text-ink">Supabase isn&apos;t configured yet</p>
               <p>
-                Add <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-                <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
-                <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">.env.local</code>, then restart the dev
-                server. The README walks through every step.
+                Add <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">SUPABASE_URL</code> and{" "}
+                <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">SUPABASE_ANON_KEY</code> (with or without the{" "}
+                <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">NEXT_PUBLIC_</code> prefix) to your environment
+                variables — <code className="rounded bg-surface-2 px-1 py-0.5 text-xs">.env.local</code> on your computer, or
+                Vercel → Settings → Environment Variables — then restart or redeploy.
               </p>
             </div>
           )}

@@ -1,10 +1,19 @@
+import { requireUser } from "@/lib/auth";
 import { getUserContext } from "@/lib/data";
+import { checkDatabase } from "@/lib/setup";
+import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/nav/sidebar";
 import { BottomNav } from "@/components/nav/bottom-nav";
 import { UserSync } from "@/components/nav/user-sync";
 import { ToastProvider } from "@/components/ui/toast";
+import { SetupNeeded } from "@/components/setup-needed";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  await requireUser();
+  // Make sure the database is ready before showing anything that saves data.
+  const problem = await checkDatabase(await createClient());
+  if (problem) return <SetupNeeded problem={problem} />;
+
   const { user, settings } = await getUserContext();
   return (
     <ToastProvider>

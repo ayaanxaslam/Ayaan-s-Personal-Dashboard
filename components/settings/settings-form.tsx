@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
-import { X, Plus } from "lucide-react";
-import { saveSettings } from "@/app/actions/settings";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { AlertCircle, CheckCircle2, X, Plus } from "lucide-react";
+import { saveSettings, type SettingsInput } from "@/app/actions/settings";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Field, FormError, inputClass } from "@/components/ui/field";
+import { Field, inputClass } from "@/components/ui/field";
 import { useAction } from "@/components/ui/use-action";
 import { formatWater, mlToUnit, unitLabel, unitToMl } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -110,7 +111,8 @@ export function SettingsForm({ settings, profile }: { settings: UserSettings; pr
   const [weekStartsOn, setWeekStartsOn] = useState<0 | 1>(settings.week_starts_on);
   const [theme, setTheme] = useState<ThemePreference>(settings.theme);
   const [metrics, setMetrics] = useState<GoalMetric[]>(settings.daily_goal_metrics);
-  const { run, pending, error, setError } = useAction();
+  const { run, pending, error } = useAction();
+  const [incError, setIncError] = useState<string | null>(null);
 
   /** Current height/weight in metric (null when empty or invalid). */
   function bodyMetric(): { height: number | null; weight: number | null } {
@@ -154,61 +156,99 @@ export function SettingsForm({ settings, profile }: { settings: UserSettings; pr
 
   function addIncrement() {
     const ml = unitToMl(Number(newIncrement), unit);
-    if (!newIncrement || !Number.isFinite(ml) || ml < 1 || ml > 5000) return setError("Quick-add amounts must be up to 5 litres.");
-    if (increments.length >= 6) return setError("You can have up to six quick-add amounts.");
+    if (!newIncrement || !Number.isFinite(ml) || ml < 1 || ml > 5000) return setIncError("Quick-add amounts must be up to 5 litres.");
+    if (increments.length >= 6) return setIncError("You can have up to six quick-add amounts.");
     setIncrements([...new Set([...increments, ml])].sort((a, b) => a - b));
     setNewIncrement("");
-    setError(null);
+    setIncError(null);
   }
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
+  /** Validates the form and returns what would be saved. */
+  function build(): { ok: true; payload: SettingsInput } | { ok: false; error: string } {
     const sleepGoal = Number(sleepHours || 0) * 60 + Number(sleepMins || 0);
     const waterMl = unitToMl(Number(waterGoal), unit);
     const steps = Number(stepGoal);
     const med = Number(meditationGoal);
-    if (!Number.isInteger(steps) || steps < 100 || steps > 100000) return setError("Step goal must be between 100 and 100,000.");
-    if (!Number.isInteger(sleepGoal) || sleepGoal < 60 || sleepGoal > 1080) return setError("Sleep goal must be between 1 and 18 hours.");
-    if (!Number.isFinite(waterMl) || waterMl < 100 || waterMl > 10000) return setError("Water goal must be between 100 ml and 10 L.");
-    if (!Number.isInteger(med) || med < 1 || med > 600) return setError("Meditation goal must be between 1 and 600 minutes.");
-    if (!increments.length) return setError("Add at least one quick-add water amount.");
-    if (ageNum !== null && validAge === null) return setError("Age must be a whole number between 5 and 120.");
+    const fail = (error: string) => ({ ok: false as const, error });
+    if (!stepGoal.trim() || !Number.isInteger(steps) || steps < 100 || steps > 100000) return fail("Step goal must be between 100 and 100,000.");
+    if (!Number.isInteger(sleepGoal) || sleepGoal < 60 || sleepGoal > 1080) return fail("Sleep goal must be between 1 and 18 hours.");
+    if (!waterGoal.trim() || !Number.isFinite(waterMl) || waterMl < 100 || waterMl > 10000) return fail("Water goal must be between 100 ml and 10 L.");
+    if (!meditationGoal.trim() || !Number.isInteger(med) || med < 1 || med > 600) return fail("Meditation goal must be between 1 and 600 minutes.");
+    if (!increments.length) return fail("Add at least one quick-add water amount.");
+    if (ageNum !== null && validAge === null) return fail("Age must be a whole number between 5 and 120.");
     const body = bodyMetric();
     if (body.height !== null && (!Number.isFinite(body.height) || body.height < 50 || body.height > 272))
-      return setError("Height looks out of range — check the number and units.");
+      return fail("Height looks out of range — check the number and units.");
     if (body.weight !== null && (!Number.isFinite(body.weight) || body.weight < 10 || body.weight > 400))
-      return setError("Weight looks out of range — check the number and units.");
-    run(
-      () =>
-        saveSettings({
-          displayName: name,
-          age: validAge,
-          heightCm: body.height,
-          weightKg: body.weight,
-          bodyUnits,
-          stepGoal: steps,
-          sleepGoalMinutes: sleepGoal,
-          waterGoalMl: waterMl,
-          meditationGoalMinutes: med,
-          waterUnit: unit,
-          waterIncrementsMl: increments,
-          timezone,
-          weekStartsOn,
-          theme,
-          dailyGoalMetrics: metrics,
-        }),
-      {
-        success: "Settings saved",
-        silentError: true,
-        onSuccess: () => {
-          document.documentElement.dataset.theme = theme;
-        },
+      return fail("Weight looks out of range — check the number and units.");
+    return {
+      ok: true,
+      payload: {
+        displayName: name,
+        age: validAge,
+        heightCm: body.height,
+        weightKg: body.weight,
+        bodyUnits,
+        stepGoal: steps,
+        sleepGoalMinutes: sleepGoal,
+        waterGoalMl: waterMl,
+        meditationGoalMinutes: med,
+        waterUnit: unit,
+        waterIncrementsMl: increments,
+        timezone,
+        weekStartsOn,
+        theme,
+        dailyGoalMetrics: metrics,
       },
-    );
+    };
   }
 
+  // ---- Auto-save: save ~0.8s after the last valid change. ----
+  const built = build();
+  const key = built.ok ? JSON.stringify(built.payload) : null;
+  const [savedKey, setSavedKey] = useState(key);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const pendingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!key || key === savedKey) {
+      pendingRef.current = null;
+      return;
+    }
+    pendingRef.current = key;
+    const timer = window.setTimeout(() => {
+      pendingRef.current = null;
+      setStatus("saving");
+      run(() => saveSettings(JSON.parse(key) as SettingsInput), {
+        silentError: true,
+        onSuccess: () => {
+          setSavedKey(key);
+          setStatus("saved");
+        },
+      }).then((ok) => {
+        if (!ok) setStatus("error");
+      });
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [key, savedKey, run]);
+
+  // If you leave the page before the timer fires, save straight away.
+  useEffect(
+    () => () => {
+      if (pendingRef.current) void saveSettings(JSON.parse(pendingRef.current) as SettingsInput);
+    },
+    [],
+  );
+
+  // Apply the theme as soon as it's picked.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  const validationError = built.ok ? null : built.error;
+
   return (
-    <form onSubmit={submit} className="space-y-6" noValidate>
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-6" noValidate>
       <Card>
         <CardHeader
           title="About you"
@@ -300,7 +340,7 @@ export function SettingsForm({ settings, profile }: { settings: UserSettings; pr
               ) : null}
               <li>Activity: {guide.activity.text} ({guide.activity.source})</li>
             </ul>
-            <p className="mt-2 text-ink-3">“Use” fills the box — press Save settings to keep it.</p>
+            <p className="mt-2 text-ink-3">“Use” updates your goal and saves it automatically.</p>
           </div>
         ) : (
           <p className="mb-4 text-xs text-ink-3">Add your age (and weight) above to see suggested goals.</p>
@@ -410,6 +450,11 @@ export function SettingsForm({ settings, profile }: { settings: UserSettings; pr
                 <Plus className="size-4" aria-hidden /> Add
               </Button>
             </div>
+            {incError ? (
+              <p role="alert" className="mt-2 text-xs text-danger">
+                {incError}
+              </p>
+            ) : null}
           </div>
         </div>
       </Card>
@@ -466,13 +511,34 @@ export function SettingsForm({ settings, profile }: { settings: UserSettings; pr
         </div>
       </Card>
 
-      <div className="sticky bottom-20 z-10 flex items-center justify-end gap-3 rounded-3xl bg-surface/90 p-3 shadow-float backdrop-blur lg:bottom-4">
-        <div className="min-w-0 flex-1">
-          <FormError message={error} />
-        </div>
-        <Button type="submit" size="lg" loading={pending}>
-          Save settings
-        </Button>
+      <div
+        role="status"
+        aria-live="polite"
+        className="sticky bottom-20 z-10 flex min-h-12 items-center gap-2.5 rounded-3xl bg-surface/90 px-4 py-3 text-sm shadow-float backdrop-blur lg:bottom-4"
+      >
+        {validationError ? (
+          <>
+            <AlertCircle className="size-4 shrink-0 text-danger" aria-hidden />
+            <span className="text-danger">Not saved yet — {validationError}</span>
+          </>
+        ) : status === "error" ? (
+          <>
+            <AlertCircle className="size-4 shrink-0 text-danger" aria-hidden />
+            <span className="text-danger">{error ?? "Couldn't save. Check your connection."}</span>
+          </>
+        ) : pending || status === "saving" || (key !== savedKey && key !== null) ? (
+          <>
+            <Spinner className="size-4 text-ink-3" />
+            <span className="text-ink-2">Saving…</span>
+          </>
+        ) : status === "saved" ? (
+          <>
+            <CheckCircle2 className="size-4 shrink-0 text-mint" aria-hidden />
+            <span className="text-ink-2">All changes saved</span>
+          </>
+        ) : (
+          <span className="text-ink-3">Changes save automatically.</span>
+        )}
       </div>
     </form>
   );

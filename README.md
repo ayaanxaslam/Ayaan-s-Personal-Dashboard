@@ -14,7 +14,11 @@ A private wellness and habit tracker for one person: habits with streaks, sleep,
 | **Habits** | Create, edit and delete habits with a name, optional icon, and an every-day or selected-days schedule. Mark done / undo with instant feedback. 30-day history grid (tap any day to fix it), current and best streaks, 30-day consistency. |
 | **Activity** | Overview plus a page each for Sleep, Steps, Water, Workouts, Meditation and **Food**: add, edit and delete records, weekly charts, averages, and history. The food diary records the meal (breakfast, lunch, dinner, snack or drink), what you had, the date and optional notes. |
 | **Insights** | 7/30/90-day range selector. Daily goal completion, weekly habit completion, most consistent habits, sleep, steps, water, workout and meditation charts. AI chat about your data. |
-| **Settings** | **About you**: age, height and weight (all optional, in cm/kg or ft/in/lb), with suggested goals for your age that you can apply in one tap. Step, sleep, water and meditation goals. Which goals count towards the daily gauge. Water unit (ml/L, litres, fl oz) and quick-add amounts. Timezone, week start, theme (system/light/dark), display name. Saved in Supabase, so they follow you across devices. |
+| **Settings** | **About you**: age, height and weight (all optional, in cm/kg or ft/in/lb), with suggested goals for your age that you can apply in one tap. Step, sleep, water and meditation goals. Which goals count towards the daily gauge. Water unit (ml/L, litres, fl oz) and quick-add amounts. Timezone, week start, theme (system/light/dark), display name. Changes **save automatically** a moment after you stop typing (there’s no Save button), and they’re stored in Supabase so they follow you across devices. |
+
+### Saving
+
+Everything saves straight to Supabase as you go: ticking a habit, tapping a water amount, pressing **Save**/**Log** in a form, deleting an entry, and every change in Settings. There’s nothing to sync or export. If the database isn’t ready (for example, a migration hasn’t been run), the app shows a “finish setup” screen naming the exact file to run, instead of letting you enter data that can’t be saved.
 
 ### How the numbers work
 
@@ -78,8 +82,8 @@ cp .env.example .env.local
 
 | Variable | Required | Where it’s used |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Browser and server. Public by design. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Browser and server. Public by design; RLS protects the data. |
+| `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`) | Yes | Server only in this app. Either name works. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`) | Yes | Server only in this app. Either name works; the publishable key is accepted too. RLS protects the data. |
 | `OPENAI_API_KEY` | For AI chat only | **Server only** (`app/api/insights/route.ts`). Without it, everything else works and the chat shows a setup message. |
 | `OPENAI_MODEL` | No (default `gpt-5-mini`) | Server only. Any model your OpenAI account can use with the Responses API. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Not used** | Leave it out. Nothing in this app needs it. |
