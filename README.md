@@ -50,7 +50,8 @@ Saving the SQL files in this repository does **not** create anything in Supabase
 1. In the Supabase dashboard, open **SQL Editor → New query**.
 2. Paste in the whole of [`supabase/migrations/20261016000000_initial_schema.sql`](supabase/migrations/20261016000000_initial_schema.sql) and click **Run**. It should finish with “Success. No rows returned”.
 3. Open another **New query**, paste in [`supabase/migrations/20261017000000_profile_details_and_food.sql`](supabase/migrations/20261017000000_profile_details_and_food.sql) and click **Run**.
-4. Check **Table Editor**: you should see `profiles`, `user_settings`, `habits`, `habit_completions`, `sleep_records`, `step_records`, `water_records`, `workout_records`, `meditation_records` and `food_records`, each with RLS enabled.
+4. Do the same for [`supabase/migrations/20261017100000_lock_down_trigger_function.sql`](supabase/migrations/20261017100000_lock_down_trigger_function.sql) (a one-line security tidy-up).
+5. Check **Table Editor**: you should see `profiles`, `user_settings`, `habits`, `habit_completions`, `sleep_records`, `step_records`, `water_records`, `workout_records`, `meditation_records` and `food_records`, each with RLS enabled.
 
 The migration:
 
